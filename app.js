@@ -3,10 +3,10 @@ const colors = require('colors')
 const config = require('./config.json')
 const fs = require("fs")
 const comments = {
-	// "success" : fs.readFileSync("./comments/success.md", "utf-8")
+	"success" : fs.readFileSync("./comments/success.md", "utf-8")
 }
 
-// var db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
+var db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
 
 
 console.log('\033[2J')
@@ -25,14 +25,41 @@ function doesContainPhrase (operationData) {
 	return false
 }
 
-function checkEligibility (operationData, callback) {
-	callsFromThisUser = 0
+function getCallData(operationData, callback) {
+	var backData = {
+		"allowed" : false,
+		"categoryAllowed" : false,
+		"callsFromThisUser" : 0,
+		"call_under_comment" : false
+	}
+	var callsFromThisUser = 0
 	for(call_no in db.days[day].calls)
 	{
 		if (db.days[day].calls[call_no].caller == operationData.author) {
 			callsFromThisUser++
 		}
 	}
+	backData.callsFromThisUser = callsFromThisUser
+	var userList = fs.readFileSync("./users/allowed_users", "utf-8")
+	if (userList.includes(operationData.author)) {
+		backData.allowed = true
+		steem.api.getContent(operationData.author, operationData.permlink, function(err, result) {
+			if (!err) {
+				if (result.depth > 1) {
+					callback(true)
+				}
+				else
+					callback(false)
+			}
+			else {
+				console.log("ERR".bgRed, "Knowing it is under a comment or not")
+			}
+		})
+	}
+}
+
+function checkEligibility (operationData, callback) {
+	
 
 	if(result_data.allowed == false) {
 		callback("not_allowed")
@@ -40,7 +67,7 @@ function checkEligibility (operationData, callback) {
 	else if (result_data.categoryAllowed == false) {
 		callback("cat_not_allowed")
 	}
-	else if (callsFromThisUser >= config.user.calls_per_day)
+	else if (result_data.callsFromThisUser >= config.user_limits.calls_per_day)
 	{
 		callback("limit_reached")
 	}
