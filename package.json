@@ -1,0 +1,30 @@
+{
+  "name": "marlians-bot",
+  "version": "1.0.0",
+  "description": "A Voting Curation bot, summons when called in comments, Works on Marlians-Scot!",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alihassanah/marlians-bot.git"
+  },
+  "keywords": [
+    "js",
+    "steem",
+    "scot",
+    "marlians",
+    "ulogs"
+  ],
+  "author": "Ali H",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alihassanah/marlians-bot/issues"
+  },
+  "homepage": "https://github.com/alihassanah/marlians-bot#readme",
+  "dependencies": {
+    "colors": "^1.3.3",
+    "steem": "^0.7.5"
+  }
+}
