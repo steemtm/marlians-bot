@@ -2,9 +2,6 @@ const steem = require('steem')
 const colors = require('colors')
 const config = require('./config.json')
 const fs = require("fs")
-const comments = {
-	"success" : fs.readFileSync("./comments/success.md", "utf-8")
-}
 
 var db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
 
@@ -46,13 +43,23 @@ function getCallData(operationData, callback) {
 		steem.api.getContent(operationData.author, operationData.permlink, function(err, result) {
 			if (!err) {
 				if (result.depth > 1) {
-					callback(true)
+					backData.call_under_comment = true
 				}
-				else
-					callback(false)
+				var ARR = userList.split('\n')
+				for (data_num in ARR) {
+					var this_user = ARR[data_num].split(' ')
+					if (this_user[0] == operationData.author) {
+						for (var x = 1; x <= this_user.length - 1; x++)
+						{
+							if (this_user[x] == result.category) {
+								backData.categoryAllowed = true
+							}
+						}
+					}
+				}
 			}
 			else {
-				console.log("ERR".bgRed, "Knowing it is under a comment or not")
+				console.log("ERR".bgRed, "Knowing it is under a comment or not".yellow)
 			}
 		})
 	}
