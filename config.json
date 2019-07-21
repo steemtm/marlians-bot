@@ -1,0 +1,11 @@
+{
+    "username" : "",
+    "keys" : {
+        "posting" : ""
+    },
+    "call_phrases" : [""],
+    "def_vote_percent" : 0,
+    "user_limits" : {
+        "calls_per_day" : 0
+    }
+}
