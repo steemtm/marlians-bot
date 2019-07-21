@@ -2,7 +2,13 @@ const steem = require('steem')
 const colors = require('colors')
 const config = require('./config.json')
 const fs = require("fs")
-
+const comments = {
+	"success" : JSON.parse(fs.readFileSync("./commets/success.md", "utf-8")),
+	"call_under_comment" : JSON.parse(fs.readFileSync("./commets/call_under_comment.md", "utf-8")),
+	"limit_reached" : JSON.parse(fs.readFileSync("./commets/limit_reached.md", "utf-8")),
+	"not_allowed" : JSON.parse(fs.readFileSync("./commets/not_allowed.md", "utf-8")),
+	"cat_not_allowed" : JSON.parse(fs.readFileSync("./commets/cat_not_allowed.md", "utf-8"))
+}
 var db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
 var day, last_call, check_it = true
 
@@ -97,7 +103,7 @@ function votePost (operationData, weight, callback) {
 	})
 }
 
-function comment (operationData, weight, callback) {
+function comment (type, operationData, weight, callback) {
 	var commentPermlink = steem.formatter.commentPermlink(operationData.parent_author, operationData.parent_permlink)
 	var body = comments[type].replace(/%author%/gi, operationData.parent_author)
 	body = body.replace(/%caller%/gi, operationData.author)
@@ -196,13 +202,13 @@ else {
 							weight = config.def_vote_percent * 100
 						votePost(operationData, weight, function (log) {
 							if (log == true)
-							comment(operationData, weight, function () {
+							comment("success", operationData, weight, function () {
 								updateDatabase(operationData, weight)
 							})
 						})
 					}
 					else
-						comment(result, function() {})
+						comment(result, operationData, 0, function() {})
 				})
 			}
 		}
