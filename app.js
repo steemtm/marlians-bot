@@ -4,7 +4,7 @@ const config = require('./config.json')
 const fs = require("fs")
 
 var db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
-var day, last_call
+var day, last_call, check_it = true
 
 console.log('\033[2J')
 console.log("#----------------------------#".green)
@@ -37,7 +37,7 @@ function getCallData(operationData, callback) {
 		}
 	}
 	backData.callsFromThisUser = callsFromThisUser
-	var userList = fs.readFileSync("./users/allowed_users", "utf-8")
+	var userList = fs.readFileSync("./users/allowed_users.txt", "utf-8")
 	if (userList.includes(operationData.author)) {		
 		steem.api.getContent(operationData.author, operationData.permlink, function(err, result) {
 			if (!err) {
@@ -140,6 +140,21 @@ function updateDatabase (operationData, weight) {
 	})
 }
 
+function updateDay () {
+	check_it == false
+	db.days[++day] = {
+		"calls" : {}
+	}
+	fs.writeFile("./database/log.json", JSON.stringify(db, null, "\t"), function(err) {
+	    if(err) {
+		return console.log(err);
+	    }
+		console.log("DAY REST! DB UPDATED".green);
+		console.log("")
+		check_it == true
+	})
+}
+
 if (config.isset == false) {
 	console.log(" ERR ".bgRed, "Please Configure the bot first, edit config.json file".yellow)
 }
@@ -147,44 +162,49 @@ else {
 	console.log("BOT STARTED".yellow)
 	var check = 0
 	steem.api.streamOperations(function (err, result) {
-        if (check == 0) {
-            console.log("STREAMING MARLIANS STARTED..".yellow)
-            console.log("")
-            check++
-        }
-        var operationType = result[0]
-        var operationData = result[1]
-        if (operationType == "comment" && doesContainPhrase(operationData)) {
-			db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
-			day = Object.keys(db.days).length
-			last_call = Object.keys(db.days[day].calls).length
-            console.log(" => ".bgRed," NEW COMMENT FOUND")
-            console.log("PROCEEDING NOW...")
-            checkEligibility(operationData, function(result) {
-				if (result == "eligible") {
-					var start_location, weight
-					for (var i = 0; i <= config.call_phrases.length - 1; i++) {
-						if (operationData.body.includes(config.call_phrases[i])) {
-							start_location = operationData.body.search(config.call_phrases[i])
+		if (check_it == true) {
+			if (check == 0) {
+				console.log("STREAMING MARLIANS STARTED..".yellow)
+				console.log("")
+				check++
+			}
+			if (new Date().getHours() == 00 && new Date().getMinutes() == 00) {
+				updateDay()
+			}
+			var operationType = result[0]
+			var operationData = result[1]
+			if (operationType == "comment" && doesContainPhrase(operationData)) {
+				db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
+				day = Object.keys(db.days).length
+				last_call = Object.keys(db.days[day].calls).length
+				console.log(" => ".bgRed," NEW COMMENT FOUND")
+				console.log("PROCEEDING NOW...")
+				checkEligibility(operationData, function(result) {
+					if (result == "eligible") {
+						var start_location, weight
+						for (var i = 0; i <= config.call_phrases.length - 1; i++) {
+							if (operationData.body.includes(config.call_phrases[i])) {
+								start_location = operationData.body.search(config.call_phrases[i])
+							}
 						}
-					}
-					var textRaw = operationData.body.substr(start_location)
-					var text = textRaw.split(" ")
-					if (typeof text[1] != "undefined" && parseInt(text[1]) <= 100) {
-						weight = parseInt(text[1]) * 100
+						var textRaw = operationData.body.substr(start_location)
+						var text = textRaw.split(" ")
+						if (typeof text[1] != "undefined" && parseInt(text[1]) <= 100) {
+							weight = parseInt(text[1]) * 100
+						}
+						else
+							weight = config.def_vote_percent * 100
+						votePost(operationData, weight, function (log) {
+							if (log == true)
+							comment(operationData, weight, function () {
+								updateDatabase(operationData, weight)
+							})
+						})
 					}
 					else
-						weight = config.def_vote_percent * 100
-					votePost(operationData, weight, function (log) {
-						if (log == true)
-						comment(operationData, weight, function () {
-							updateDatabase(operationData, weight)
-						})
-					})
-				}
-				else
-					comment(result, function() {})
-            })
-        }
+						comment(result, function() {})
+				})
+			}
+		}
 	})
 }
