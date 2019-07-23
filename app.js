@@ -3,11 +3,11 @@ const colors = require('colors')
 const config = require('./config.json')
 const fs = require("fs")
 const comments = {
-	"success" : JSON.parse(fs.readFileSync("./commets/success.md", "utf-8")),
-	"call_under_comment" : JSON.parse(fs.readFileSync("./commets/call_under_comment.md", "utf-8")),
-	"limit_reached" : JSON.parse(fs.readFileSync("./commets/limit_reached.md", "utf-8")),
-	"not_allowed" : JSON.parse(fs.readFileSync("./commets/not_allowed.md", "utf-8")),
-	"cat_not_allowed" : JSON.parse(fs.readFileSync("./commets/cat_not_allowed.md", "utf-8"))
+	"success" : fs.readFileSync("./comments/success.md", "utf-8"),
+	"call_under_comment" : fs.readFileSync("./comments/call_under_comment.md", "utf-8"),
+	"limit_reached" : fs.readFileSync("./comments/limit_reached.md", "utf-8"),
+	"not_allowed" : fs.readFileSync("./comments/not_allowed.md", "utf-8"),
+	"cat_not_allowed" : fs.readFileSync("./comments/cat_not_allowed.md", "utf-8")
 }
 var db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
 var day, last_call, check_it = true
@@ -63,11 +63,15 @@ function getCallData(operationData, callback) {
 						}
 					}
 				}
+				callback(backData)
 			}
 			else {
 				console.log("ERR".bgRed, "Knowing it is under a comment or not".yellow)
 			}
 		})
+	}
+	else {
+		callback(backData)
 	}
 }
 
@@ -134,7 +138,7 @@ function updateDatabase (operationData, weight) {
 	var this_data = {
 		"caller" : operationData.author,
 		"author" : operationData.parent_author,
-		"vote_weight" : weight
+		"vote_weight" : weight / 100
 	}
 	db.days[day].calls[this_call_id] = this_data
 	fs.writeFile("./database/log.json", JSON.stringify(db, null, "\t"), function(err) {
@@ -183,8 +187,8 @@ else {
 				db = JSON.parse(fs.readFileSync("./database/log.json", "utf-8"))
 				day = Object.keys(db.days).length
 				last_call = Object.keys(db.days[day].calls).length
-				console.log(" => ".bgRed," NEW COMMENT FOUND")
-				console.log("PROCEEDING NOW...")
+				console.log(" => ".bgRed," NEW COMMENT FOUND".yellow)
+				console.log("PROCEEDING NOW...".yellow)
 				checkEligibility(operationData, function(result) {
 					if (result == "eligible") {
 						var start_location, weight
@@ -207,8 +211,10 @@ else {
 							})
 						})
 					}
-					else
+					else {
 						comment(result, operationData, 0, function() {})
+						console.log("USER IS NOT ELIGIBLE REASON => ".yellow, result.green)
+					}
 				})
 			}
 		}
