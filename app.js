@@ -111,7 +111,8 @@ function comment (type, operationData, weight, callback) {
 	var commentPermlink = steem.formatter.commentPermlink(operationData.parent_author, operationData.parent_permlink)
 	var body = comments[type].replace(/%author%/gi, operationData.parent_author)
 	body = body.replace(/%caller%/gi, operationData.author)
-	body = body.replace(/%vote_weight%/gi, weight)
+	var percent = weight / 100
+	body = body.replace(/%vote_weight%/gi, percent)
 	jsonMetadata = 	{"tags":["marlians"],"app":"marlians-bot\/1.0","format":"markdown", "app_dev" : "Ali H"}
 	steem.broadcast.comment(
 		config.keys.posting, 
